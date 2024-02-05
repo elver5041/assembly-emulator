@@ -9,6 +9,7 @@ use commands::TokenError;
 use commands::Commands;
 
 
+
 const ANSI_RESET: &str = "\x1b[0m";
 const ANSI_BOLD: &str = "\x1b[1m";
 const ANSI_RED: &str = "\x1b[31m";
@@ -32,7 +33,7 @@ fn main() {
         timer = Instant::now();
     }
     let separated: Vec<Vec<String>> = separator(lines);
-    let (tokenized, function_headers) = match new_func(separated) {
+    let (tokenized, function_headers) = match new_func::<u8>(separated) {
         Ok((s,v)) => (s,v),
         Err(e) => {
             println!("{ANSI_BOLD}{ANSI_RED}Failed to parse input{ANSI_RESET}: {}", e);
@@ -68,14 +69,16 @@ fn separator(input: Vec<String>) -> Vec<Vec<String>> {
         .collect()
 }
 
-fn new_func(input: Vec<Vec<String>>) -> Result<(Vec<Commands>, HashMap<String,usize>),TokenError>{
+fn new_func<T>(input: Vec<Vec<String>>) -> Result<(Vec<Commands>, HashMap<String,usize>),TokenError>{
+
     const FUNCTION_INTRO:char = '.';
     let mut fnpointer: usize = 0;
     let mut functions: HashMap<String, usize> = HashMap::new();
     let mut next_func: bool = false;
     let mut l:usize=0;
     let mut token: Commands = Commands::NOP;
-    let mut tokens: Vec<(Commands,u8)> = Vec::new();
+    let mut tokens: Vec<(Commands,T)> = Vec::new();
+
     for (i, line) in input.iter().enumerate() {
         //i+1
         if next_func {
@@ -102,9 +105,15 @@ fn new_func(input: Vec<Vec<String>>) -> Result<(Vec<Commands>, HashMap<String,us
             } 
             if token != Commands::NOP {
                 if word.len()>2 {
-                    let num = match word[2] {
-                        "x" => {word[2..].parse()}
+                    match word.parse::<T>() {
+                        Ok(num) => num,
+                        Err(e) => 
                     }
+                    //TODO: parse hex and others
+                    //let num = match &word[..2] {
+                    //    "0x" => {parse_hex()},
+                    //    _ => Err(())
+                    //};
                 }
                 match token {
                     Commands::ADD => {
