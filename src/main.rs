@@ -108,12 +108,6 @@ fn new_func(input: Vec<Vec<String>>) -> Result<Vec<Commands>,TokenError>{
                 }
             }
             if token != Commands::NOP {
-                //if word.len()>2 {
-                //    let num: Result<T, _> = match word[2] {
-                //        "x" => word[2..].parse()
-                //    }
-                //todo parse other base like 0b 0x and 0o
-                //}
                 match token {
                     Commands::ADD(_) => {
                         match word.parse::<usize>().ok() {
@@ -159,6 +153,7 @@ fn new_func(input: Vec<Vec<String>>) -> Result<Vec<Commands>,TokenError>{
         }
         l=i;
     }
+
     if next_func {
         return Err(TokenError { error_type: Errors::FunctionNotThere, line: (l+2,0)});
     }
