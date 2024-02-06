@@ -1,8 +1,7 @@
-imagine
-  i could at least have 2
-
-	but no
-add
-
-
-imagine.. . lmao
+.hola
+  add 1
+  add 2
+.  loop
+  add 3
+  add 4
+  jnz loop
