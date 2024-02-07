@@ -2,10 +2,17 @@ use std::fmt;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Commands {
-    NOP,
-    ADD(usize),
-    JNZ(usize),
-    FUN
+    NOP,        //no op
+    ADD(usize), //add number
+    SUB(usize), //subtract number
+    JMP(usize), //jump to function
+    JNZ(usize), //jump to function if acc!=0 
+    SAV,        //save acc in bak
+    SWP,        //swap acc and bak
+    FUN,        //function
+    LDN(usize), //load number
+    LDA(usize), //load address
+    
 }
 
 #[derive(Debug, Clone)]
@@ -29,7 +36,11 @@ impl fmt::Display for Commands {
         match &self {
             Commands::ADD(a) => write!(f,"ADD {}",a),
             Commands::JNZ(a) => write!(f,"JNZ {}",a),
-            Commands::FUN |
+            Commands::JMP(a) => write!(f,"JMP {}",a),
+            Commands::SUB(a) => write!(f,"SUB {}",a),
+            Commands::LDA(a) => write!(f,"LDA {}",a),
+            Commands::LDN(a) => write!(f,"LDN {}",a),
+            Commands::SAV | Commands::SWP | Commands::FUN |
             Commands::NOP=> todo!()
         }
     }

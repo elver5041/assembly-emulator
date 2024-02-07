@@ -1,7 +1,12 @@
+# comentari?
 .hola
-  add 1
+  sub 1
+  # si, no?
   add 2
+#full ignore
 .  loop
-  add 3
+  sub 3
   add 4
   jnz loop
+  sav
+  swp

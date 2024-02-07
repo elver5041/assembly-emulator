@@ -72,6 +72,7 @@ fn separator(input: Vec<String>) -> Vec<Vec<String>> {
 
 fn new_func(input: Vec<Vec<String>>) -> Result<Vec<Commands>,TokenError>{
     const FUNCTION_INTRO:char = '.';
+    const  COMMENT_INTRO:char = '#';
     let mut fncounter = 0;
     let mut next_func: bool = false;
     let mut l:usize=0;
@@ -86,26 +87,24 @@ fn new_func(input: Vec<Vec<String>>) -> Result<Vec<Commands>,TokenError>{
             return Err(TokenError { error_type: Errors::FunctionNotThere, line: (i+1,0)});
         }
         if line.len()==1 && line[0]=="" {
-            continue
+            continue;
         }
         let mut counter: usize = 0;
         for word in line {
+            if word == &COMMENT_INTRO.to_string() {
+                break;
+            }
             if word == "" {
                 counter+=1;
                 continue;
             } 
             if next_func {
-                if word == "" {
-                    return Err(TokenError { error_type: Errors::FunctionNotThere, line: (i+1,counter)});
-                } else {
-                    token = Commands::FUN;
-                    
-                    if functions.iter().any(|(s,_)| s == &word[1..]) {
-                        return Err(TokenError { error_type: Errors::FunctionAlreadyInUse(word[1..].to_string()), line: (i+1,counter) })
-                    }
-                    functions.push((word.to_string(), fncounter));
-                    next_func=false;
+                token = Commands::FUN;
+                if functions.iter().any(|(s,_)| s == &word[1..]) {
+                    return Err(TokenError { error_type: Errors::FunctionAlreadyInUse(word[1..].to_string()), line: (i+1,counter) })
                 }
+                functions.push((word.to_string(), fncounter));
+                next_func=false;
             }
             if token != Commands::NOP {
                 match token {
@@ -115,19 +114,45 @@ fn new_func(input: Vec<Vec<String>>) -> Result<Vec<Commands>,TokenError>{
                             None => return Err(TokenError { error_type: Errors::InvalidContinuation(token, word.to_owned()), line: (i+1,counter)}),
                         }
                     },
-                    Commands::FUN => {
-                        tokens.push(token);
+                    Commands::SUB(_) => {
+                        match word.parse::<usize>().ok() {
+                            Some(n) => tokens.push(Commands::SUB(n)),
+                            None => return Err(TokenError { error_type: Errors::InvalidContinuation(token, word.to_owned()), line: (i+1,counter)}),
+                        }
+                    },
+                    Commands::LDN(_) => {
+                        match word.parse::<usize>().ok() {
+                            Some(n) => tokens.push(Commands::LDN(n)),
+                            None => return Err(TokenError { error_type: Errors::InvalidContinuation(token, word.to_owned()), line: (i+1,counter)}),
+                        }
+                    },
+                    Commands::LDA(_) => {
+                        match word.parse::<usize>().ok() {
+                            Some(n) => tokens.push(Commands::LDA(n)),
+                            None => return Err(TokenError { error_type: Errors::InvalidContinuation(token, word.to_owned()), line: (i+1,counter)}),
+                        }
+                    },
+                    Commands::JMP(_) => {
+                        calls.push(fncounter);
+                        funjumps.push(word.to_string());
+                        tokens.push(Commands::JMP(funjumps.len()-1))
                     },
                     Commands::JNZ(_) => {
                         calls.push(fncounter);
                         funjumps.push(word.to_string());
                         tokens.push(Commands::JNZ(funjumps.len()-1))
-                    }
-                    Commands::NOP => ()
+                    },
+                    Commands::FUN => {
+                        tokens.push(token);
+                    },
+                    Commands::NOP | Commands::SAV | Commands::SWP => ()
                 }
                 token = Commands::NOP;
                 fncounter+=1;
             } 
+            else if word.starts_with(COMMENT_INTRO){
+                break;
+            }
             else if word.starts_with(FUNCTION_INTRO) {
                 if word[1..] == "".to_owned() {
                     next_func = true;
@@ -140,18 +165,43 @@ fn new_func(input: Vec<Vec<String>>) -> Result<Vec<Commands>,TokenError>{
                 next_func = false;
                 tokens.push(Commands::FUN);
                 fncounter +=1;
+                continue;
             } 
             else {
                 token = match word.to_ascii_uppercase().as_str() {
                     "ADD" => Commands::ADD(0),
+                    "SUB" => Commands::SUB(0),
+                    "JMP" => Commands::JMP(0),
                     "JNZ" => Commands::JNZ(0),
+                    "SAV" => Commands::SAV,
+                    "SWP" => Commands::SWP,
+                    "LDN" => Commands::LDN(0),
+                    "LDA" => Commands::LDA(0),
                     _ => return Err(TokenError { error_type: Errors::InvalidToken(word.to_owned()), line: (i+1,counter) })
                 };
+                match token {
+                    Commands::ADD(_) | Commands::SUB(_) | Commands::JNZ(_) | Commands::JMP(_) |
+                    Commands::LDA(_) | Commands::LDN(_)=> (),
+                    Commands::SAV | Commands::SWP => {
+                        tokens.push(token);
+                        token = Commands::NOP;
+                    }
+                    Commands::NOP | Commands::FUN => ()
+                }
             }
             
             counter += word.len()+1;
         }
         l=i;
+    }
+    
+    if token != Commands::NOP {
+        match token {
+            Commands::FUN | Commands::SAV | Commands::SWP => {
+                tokens.push(token);
+            },
+            _ => todo!()
+        }
     }
 
     if next_func {
